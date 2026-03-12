@@ -1,0 +1,22 @@
+[
+    {
+        "author": "Andy Weir",
+        "id": 2,
+        "title": "Project Hail Mary"
+    },
+    {
+        "author": "Andy Weir",
+        "id": 3,
+        "title": "The Martian"
+    },
+    {
+        "author": "Frank Herbert",
+        "id": 4,
+        "title": "Dune"
+    },
+    {
+        "author": "J.R.R. Tolkien",
+        "id": 5,
+        "title": "The Lord of the Rings"
+    }
+]
