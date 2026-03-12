@@ -1,0 +1,22 @@
+[
+    {
+        "author": "Douglas Adams",
+        "id": 1,
+        "title": "The Hitchhiker's Guide to the Galaxy (Updated)"
+    },
+    {
+        "author": "Andy Weir",
+        "id": 2,
+        "title": "Project Hail Mary"
+    },
+    {
+        "author": "Andy Weir",
+        "id": 3,
+        "title": "The Martian"
+    },
+    {
+        "author": "Frank Herbert",
+        "id": 4,
+        "title": "Dune"
+    }
+]
