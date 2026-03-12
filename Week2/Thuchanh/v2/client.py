@@ -30,13 +30,19 @@ def get_book_by_id(book_id):
         print(f"Error: {response.status_code}")
         return None
 
-if __name__ == '__main__':
-
-    # Get all books
+def test_api():
+     # Get all books
     print("Test 1. Getting all books...")
     books = get_all_books()
     if books:
         print("Books:", books)
+    print("----------------------------------------------")
+
+    # Add a new book
+    print("Test 2. Adding a new book...")
+    new_book = add_book("The Lord of the Rings", "J.R.R. Tolkien")
+    if new_book:
+        print("Added Book:", new_book)
     print("----------------------------------------------")
 
     # Get a book by ID
@@ -51,13 +57,6 @@ if __name__ == '__main__':
     book = get_book_by_id(-1)
     if not book:
         print("Book with ID -1 not found.")
-    print("----------------------------------------------")
-
-    # Add a new book
-    print("Test 2. Adding a new book...")
-    new_book = add_book("The Lord of the Rings", "J.R.R. Tolkien")
-    if new_book:
-        print("Added Book:", new_book)
     print("----------------------------------------------")
 
     # Update a book
@@ -82,16 +81,20 @@ if __name__ == '__main__':
 
     # Delete a book
     print("Test 7. Deleting a book...")
-    response = requests.delete(f'{SERVER_URL}/1')
+    response = requests.delete(f'{SERVER_URL}/5')
     if response.status_code == 200:
         print("Delete Response:", response.json())
     else:
         print(f"Error: {response.status_code}")
 
-    response = requests.get(f'{SERVER_URL}/1')
+    response = requests.get(f'{SERVER_URL}/5')
     if response.status_code == 404:
-        print("Book with ID 1 successfully deleted.")
+        print("Book with ID 5 successfully deleted.")
     else:
         print(f"Error: {response.status_code}")
 
     print("----------------------------------------------")
+
+if __name__ == '__main__':
+    test_api()
+   

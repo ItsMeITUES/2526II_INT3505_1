@@ -1,8 +1,8 @@
 [
     {
-        "author": "Douglas Adams",
+        "author": "Isaac Asimov",
         "id": 1,
-        "title": "The Hitchhiker's Guide to the Galaxy (Updated)"
+        "title": "Foundation"
     },
     {
         "author": "Andy Weir",
@@ -18,5 +18,10 @@
         "author": "Frank Herbert",
         "id": 4,
         "title": "Dune"
+    },
+    {
+        "author": "J.R.R. Tolkien",
+        "id": 5,
+        "title": "The Lord of the Rings"
     }
 ]
