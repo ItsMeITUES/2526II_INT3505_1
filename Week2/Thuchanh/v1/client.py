@@ -3,7 +3,9 @@ import requests
 # Configurations
 ServerPort = 5000
 
-SERVER_URL = f'http://localhost:{ServerPort}/api/books'
+APIVERSION = 'v1'
+
+SERVER_URL = f'http://localhost:{ServerPort}/api/{APIVERSION}/books'
 
 def get_all_books():
     response = requests.get(f'{SERVER_URL}')

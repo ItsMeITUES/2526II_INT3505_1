@@ -8,6 +8,10 @@ app = Flask(__name__)
 # Configurations
 PORT = 5000
 
+APIVERSION = 'v3'
+
+BOOKAPI_URL = f'/api/{APIVERSION}/books'
+
 allowCache = True
 cacheVisibility = 'public' # public, private, no-cache
 cacheDuration = 60 # seconds
@@ -34,7 +38,7 @@ def save_books(books):
 # API Endpoints
 
 # Get all books
-@app.route('/api/books', methods=['GET'])
+@app.route(BOOKAPI_URL, methods=['GET'])
 def get_books_with_cache():
     books = load_books(),
     response = make_response(jsonify(books))
@@ -46,7 +50,7 @@ def get_books_with_cache():
     return response, 200
 
 # Add a new book
-@app.route('/api/books', methods=['POST'])
+@app.route(BOOKAPI_URL, methods=['POST'])
 def add_book():
     new_book = request.get_json()
 
@@ -74,7 +78,7 @@ def add_book():
     return jsonify(new_book), 201
 
 # Get a book by ID
-@app.route('/api/books/<int:book_id>', methods=['GET'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['GET'])
 def get_book(book_id):
 
     books = load_books()
@@ -89,7 +93,7 @@ def get_book(book_id):
     return jsonify({"error": "Book not found"}), 404
 
 # Delete a book by ID
-@app.route('/api/books/<int:book_id>', methods=['DELETE'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
 
     books = load_books()
@@ -105,7 +109,7 @@ def delete_book(book_id):
     return jsonify({"error": "Book not found"}), 404
 
 # Update a book by ID
-@app.route('/api/books/<int:book_id>', methods=['PUT'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
     updated_book = request.get_json()
 

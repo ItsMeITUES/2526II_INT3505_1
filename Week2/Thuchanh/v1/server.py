@@ -12,14 +12,17 @@ books = [
 
 current_id = 4
 
-# Server Port
+# Configurations
 PORT = 5000
+APIVERSION = 'v1'
 
-@app.route('/api/books', methods=['GET'])
+BOOKAPI_URL = f'/api/{APIVERSION}/books'
+
+@app.route(BOOKAPI_URL, methods=['GET'])
 def get_books():
     return jsonify(books)
 
-@app.route('/api/books', methods=['POST'])
+@app.route(BOOKAPI_URL, methods=['POST'])
 def add_book():
     new_book = request.get_json()
 
@@ -40,7 +43,7 @@ def add_book():
     #3. Return the newly created book with a 201 status code
     return jsonify(new_book), 201
 
-@app.route('/api/books/<int:book_id>', methods=['GET'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['GET'])
 def get_book(book_id):
 
     # Find the book with the given ID
@@ -52,7 +55,7 @@ def get_book(book_id):
     # If the book is not found, return a 404 error
     return jsonify({"error": "Book not found"}), 404
 
-@app.route('/api/books/<int:book_id>', methods=['DELETE'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
 
     # Find the book with the given ID and remove it from the list
@@ -64,7 +67,7 @@ def delete_book(book_id):
     # If the book is not found, return a 404 error
     return jsonify({"error": "Book not found"}), 404
 
-@app.route('/api/books/<int:book_id>', methods=['PUT'])
+@app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
     updated_book = request.get_json()
 

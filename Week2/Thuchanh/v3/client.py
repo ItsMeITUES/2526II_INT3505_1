@@ -7,7 +7,9 @@ import time
 # Configurations
 ServerPort = 5000
 
-SERVER_URL = f'http://localhost:{ServerPort}/api/books'
+APIVERSION = 'v3'
+
+SERVER_URL = f'http://localhost:{ServerPort}/api/{APIVERSION}/books'
 
 cachedDataPath = 'cached_books.json'
 
