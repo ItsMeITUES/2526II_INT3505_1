@@ -2,5 +2,17 @@
     {
         "password": "$2b$12$tFv/l0IDFcD7Z.VYa9HLmudNmUsSDspR4ScFZZXgDwTzlj7QcPaf.",
         "username": "itues"
+    },
+    {
+        "password": "$2b$12$qytKran6KNLBxMRYlB7N2OD9SmPYR0lTDUp2xmHIprRI.EEwy/Mvq",
+        "username": "abc"
+    },
+    {
+        "password": "$2b$12$gaHHpYZSpWj0BXNGmAeUFuJ3bgRXf3srwSaOtwX0FWU864yAUY.k6",
+        "username": "newuser"
+    },
+    {
+        "password": "$2b$12$1PlLnQvgihG6YNci59kp4.r9qh5upP/HIHu3OsAPD85RwQIWUU9Dq",
+        "username": "myname"
     }
 ]

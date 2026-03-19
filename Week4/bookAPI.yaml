@@ -9,6 +9,42 @@ servers:
     description: Local Development Server
 
 paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuth'
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Missing field(s) or user already exists
+
+  /auth/login:
+    post:
+      summary: Authenticate a user and obtain a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuth'
+      responses:
+        '200':
+          description: Authentication successful, returns JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Unregistered user or Wrong password
+        '400':
+          description: Missing username or password
+
   /books:
     get:
       summary: Get a list of all books
@@ -23,6 +59,8 @@ paths:
                   $ref: '#/components/schemas/Book'
     post:
       summary: Add a new book
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -34,6 +72,8 @@ paths:
           description: Book created successfully
         '400':
           description: Missing field(s)
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
 
   /books/{id}:
     get:
@@ -56,6 +96,8 @@ paths:
           
     put:
       summary: Update all details of a specific book by ID
+      security:
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -73,9 +115,12 @@ paths:
           description: Book updated successfully
         '404':
           description: Book not found
-
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
     patch:
       summary: Partially update details of a specific book by ID
+      security:
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -93,9 +138,13 @@ paths:
           description: Book updated successfully
         '404':
           description: Book not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
 
     delete:
       summary: Delete a specific book by ID
+      security:
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -107,6 +156,8 @@ paths:
           description: Book deleted successfully
         '404':
           description: Book not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
 
 components:
   schemas:
@@ -125,3 +176,41 @@ components:
         author:
           type: string
           example: "whatever the author of the book is"
+
+    UserAuth:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "newuser"
+        password:
+          type: string
+          example: "password123"
+
+    Token:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOi"
+
+  responses:
+    UnauthorizedResponse:
+      description: Expired, Invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "No Token received."
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
