@@ -6,12 +6,13 @@ from flask_cors import CORS
 import jwt
 import datetime
 import bcrypt
-
 from datetime import datetime, timezone, timedelta
 
 from functools import wraps
 
 from dotenv import load_dotenv
+
+from pymongo import MongoClient
 
 app = Flask(__name__)
 CORS(app)
@@ -29,6 +30,7 @@ allowCache = True
 cacheVisibility = 'public' # public, private, no-cache
 cacheDuration = 60 # seconds
 
+# Environment variables
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 
@@ -41,6 +43,12 @@ usersDatabase = 'data/users.json'
 ######################
 # Database Functions #
 ######################
+
+# MONGO_URI = os.getenv('MONGO_URI')
+# client = MongoClient(MONGO_URI)
+# db = client['BookManagementSystem']
+# books_collection = db['books']
+# users_collection = db['users']
 
 # Load books from the JSON file
 def load_books():
@@ -175,7 +183,19 @@ def token_required(f):
 # Get all books
 @app.route(BOOKAPI_URL, methods=['GET'])
 def get_books_with_cache():
-    books = load_books(),
+    books = load_books()
+
+    id = request.args.get('id')
+    title = request.args.get('title')
+    author = request.args.get('author')
+
+    if id:
+        books = [b for b in books if str(b['id']) == id]
+    if title:
+        books = [b for b in books if b['title'] == title]
+    if author:
+        books = [b for b in books if b['author'] == author]
+
     response = make_response(jsonify(books))
 
     # Add Cache-Control header if caching is allowed
@@ -312,12 +332,13 @@ def partially_update_book(current_user, book_id):
     #3. If the book is not found, return a 404 error
     return jsonify({"error": "Book not found"}), 404
 
-
-
 @app.route('/api/protected-data', methods=['GET'])
 @token_required
 def get_data(current_user):
     return jsonify({"data": "You are accessing protected data!"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=PORT)
+    # app.run(debug=True, port=PORT)
+
+    port = int(os.environ.get('PORT', PORT))
+    app.run(host='0.0.0.0', port=port)

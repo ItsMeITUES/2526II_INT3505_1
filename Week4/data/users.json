@@ -14,5 +14,9 @@
     {
         "password": "$2b$12$1PlLnQvgihG6YNci59kp4.r9qh5upP/HIHu3OsAPD85RwQIWUU9Dq",
         "username": "myname"
+    },
+    {
+        "query": "query GetBook($id: ID!) { book(id: $id) { title author } }",
+        "variables": { "id": "101" }
     }
 ]
