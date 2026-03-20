@@ -1,0 +1,657 @@
+openapi: 3.1.0
+info:
+  title: Library Management API
+  description: |
+    API quản lý thư viện - cho phép quản lý sách, thành viên và mượn/trả sách.
+    
+    ## Tính năng
+    - Quản lý danh mục sách (CRUD)
+    - Quản lý thành viên
+    - Mượn và trả sách
+    - Tìm kiếm và lọc
+  version: 1.0.0
+  contact:
+    name: Library API Support
+    email: api@library.example.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.library.example.com/v1
+    description: Production server
+
+tags:
+  - name: books
+    description: Quản lý sách
+  - name: members
+    description: Quản lý thành viên
+  - name: loans
+    description: Quản lý mượn/trả sách
+
+paths:
+  # ─── BOOKS ───────────────────────────────────────────────────────────────────
+  /books:
+    get:
+      tags: [books]
+      summary: Lấy danh sách sách
+      operationId: listBooks
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1, minimum: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+        - name: search
+          in: query
+          description: Tìm theo tên sách hoặc tác giả
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string, enum: [fiction, non-fiction, science, history, technology] }
+        - name: available
+          in: query
+          description: Lọc sách còn có thể mượn
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Danh sách sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse"
+              example:
+                data:
+                  - id: "book-001"
+                    title: "Clean Code"
+                    author: "Robert C. Martin"
+                    isbn: "9780132350884"
+                    category: technology
+                    totalCopies: 3
+                    availableCopies: 1
+                    publishedYear: 2008
+                pagination:
+                  page: 1
+                  limit: 20
+                  total: 1
+                  totalPages: 1
+
+    post:
+      tags: [books]
+      summary: Thêm sách mới
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookRequest"
+            example:
+              title: "The Pragmatic Programmer"
+              author: "David Thomas, Andrew Hunt"
+              isbn: "9780135957059"
+              category: technology
+              totalCopies: 5
+              publishedYear: 2019
+              description: "A guide to pragmatic programming"
+      responses:
+        "201":
+          description: Sách được tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: ISBN đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /books/{bookId}:
+    parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema: { type: string }
+        example: "book-001"
+
+    get:
+      tags: [books]
+      summary: Lấy thông tin sách theo ID
+      operationId: getBook
+      responses:
+        "200":
+          description: Thông tin chi tiết sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [books]
+      summary: Cập nhật thông tin sách
+      operationId: updateBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookRequest"
+      responses:
+        "200":
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [books]
+      summary: Xóa sách
+      operationId: deleteBook
+      responses:
+        "204":
+          description: Xóa thành công
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Không thể xóa vì sách đang được mượn
+
+  # ─── MEMBERS ─────────────────────────────────────────────────────────────────
+  /members:
+    get:
+      tags: [members]
+      summary: Lấy danh sách thành viên
+      operationId: listMembers
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Danh sách thành viên
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberListResponse"
+
+    post:
+      tags: [members]
+      summary: Đăng ký thành viên mới
+      operationId: createMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMemberRequest"
+      responses:
+        "201":
+          description: Thành viên được tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email đã được đăng ký
+
+  /members/{memberId}:
+    parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [members]
+      summary: Lấy thông tin thành viên
+      operationId: getMember
+      responses:
+        "200":
+          description: Thông tin thành viên
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /members/{memberId}/loans:
+    get:
+      tags: [members]
+      summary: Lịch sử mượn sách của thành viên
+      operationId: getMemberLoans
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, returned, overdue]
+      responses:
+        "200":
+          description: Danh sách lịch sử mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanListResponse"
+
+  # ─── LOANS ───────────────────────────────────────────────────────────────────
+  /loans:
+    get:
+      tags: [loans]
+      summary: Lấy tất cả phiếu mượn
+      operationId: listLoans
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, returned, overdue]
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Danh sách phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanListResponse"
+
+    post:
+      tags: [loans]
+      summary: Tạo phiếu mượn sách
+      operationId: createLoan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLoanRequest"
+            example:
+              bookId: "book-001"
+              memberId: "member-001"
+              dueDate: "2025-04-20"
+      responses:
+        "201":
+          description: Phiếu mượn được tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          description: Sách không còn bản để mượn
+
+  /loans/{loanId}:
+    parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema: { type: string }
+
+    get:
+      tags: [loans]
+      summary: Lấy thông tin phiếu mượn
+      operationId: getLoan
+      responses:
+        "200":
+          description: Thông tin phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /loans/{loanId}/return:
+    post:
+      tags: [loans]
+      summary: Trả sách
+      operationId: returnBook
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                returnedAt:
+                  type: string
+                  format: date
+                  description: Ngày trả (mặc định là hôm nay)
+                condition:
+                  type: string
+                  enum: [good, damaged, lost]
+                  default: good
+      responses:
+        "200":
+          description: Trả sách thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Sách đã được trả trước đó
+
+# ─── COMPONENTS ────────────────────────────────────────────────────────────────
+components:
+  schemas:
+    # Book schemas
+    Book:
+      type: object
+      required: [id, title, author, isbn, category, totalCopies, availableCopies]
+      properties:
+        id:
+          type: string
+          example: "book-001"
+        title:
+          type: string
+          example: "Clean Code"
+        author:
+          type: string
+          example: "Robert C. Martin"
+        isbn:
+          type: string
+          pattern: '^\d{13}$'
+          example: "9780132350884"
+        category:
+          type: string
+          enum: [fiction, non-fiction, science, history, technology]
+        totalCopies:
+          type: integer
+          minimum: 1
+        availableCopies:
+          type: integer
+          minimum: 0
+        publishedYear:
+          type: integer
+          minimum: 1000
+          maximum: 2100
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateBookRequest:
+      type: object
+      required: [title, author, isbn, category, totalCopies]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        author:
+          type: string
+          minLength: 1
+          maxLength: 255
+        isbn:
+          type: string
+          pattern: '^\d{13}$'
+        category:
+          type: string
+          enum: [fiction, non-fiction, science, history, technology]
+        totalCopies:
+          type: integer
+          minimum: 1
+        publishedYear:
+          type: integer
+        description:
+          type: string
+          maxLength: 2000
+
+    UpdateBookRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        author:
+          type: string
+        category:
+          type: string
+          enum: [fiction, non-fiction, science, history, technology]
+        totalCopies:
+          type: integer
+          minimum: 1
+        publishedYear:
+          type: integer
+        description:
+          type: string
+
+    BookResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Book"
+
+    BookListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # Member schemas
+    Member:
+      type: object
+      required: [id, name, email, membershipType]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        membershipType:
+          type: string
+          enum: [basic, premium, student]
+        membershipExpiry:
+          type: string
+          format: date
+        activeLoansCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateMemberRequest:
+      type: object
+      required: [name, email, membershipType]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        membershipType:
+          type: string
+          enum: [basic, premium, student]
+
+    MemberResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Member"
+
+    MemberListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Member"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # Loan schemas
+    Loan:
+      type: object
+      required: [id, bookId, memberId, borrowedAt, dueDate, status]
+      properties:
+        id:
+          type: string
+        bookId:
+          type: string
+        book:
+          $ref: "#/components/schemas/Book"
+        memberId:
+          type: string
+        member:
+          $ref: "#/components/schemas/Member"
+        borrowedAt:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        returnedAt:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [active, returned, overdue]
+        condition:
+          type: string
+          enum: [good, damaged, lost]
+          nullable: true
+
+    CreateLoanRequest:
+      type: object
+      required: [bookId, memberId]
+      properties:
+        bookId:
+          type: string
+        memberId:
+          type: string
+        dueDate:
+          type: string
+          format: date
+          description: "Hạn trả (mặc định: 14 ngày)"
+
+    LoanResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Loan"
+
+    LoanListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Loan"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+
+    # Common schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Dữ liệu đầu vào không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Dữ liệu không hợp lệ"
+            details:
+              - field: "isbn"
+                message: "ISBN phải có đúng 13 chữ số"
+
+    NotFound:
+      description: Không tìm thấy tài nguyên
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "NOT_FOUND"
+            message: "Không tìm thấy tài nguyên yêu cầu"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

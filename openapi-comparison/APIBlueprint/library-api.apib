@@ -1,0 +1,615 @@
+FORMAT: 1A
+HOST: http://localhost:3000/api/v1
+
+# Library Management API
+
+API quản lý thư viện - cho phép quản lý sách, thành viên và mượn/trả sách.
+
+API Blueprint dùng cú pháp **Markdown** thuần túy, dễ đọc và viết bằng bất kỳ text editor nào.
+
+# Group Sách (Books)
+
+Tài nguyên liên quan đến quản lý sách trong thư viện.
+
+## Danh sách sách [/books{?page,limit,search,category,available}]
+
+### Lấy danh sách sách [GET]
+
+Trả về danh sách tất cả sách với phân trang và bộ lọc.
+
++ Parameters
+    + page (number, optional) - Trang hiện tại
+        + Default: `1`
+    + limit (number, optional) - Số sách mỗi trang (tối đa 100)
+        + Default: `20`
+    + search (string, optional) - Tìm theo tên sách hoặc tác giả
+    + category (enum[string], optional) - Lọc theo danh mục
+        + Members
+            + `fiction`
+            + `non-fiction`
+            + `science`
+            + `history`
+            + `technology`
+    + available (boolean, optional) - Chỉ hiển thị sách còn có thể mượn
+
++ Response 200 (application/json)
+
+    + Attributes
+        + data (array[Book])
+        + pagination (Pagination)
+
+    + Body
+
+            {
+                "data": [
+                    {
+                        "id": "book-001",
+                        "title": "Clean Code",
+                        "author": "Robert C. Martin",
+                        "isbn": "9780132350884",
+                        "category": "technology",
+                        "totalCopies": 3,
+                        "availableCopies": 1,
+                        "publishedYear": 2008,
+                        "description": "A handbook of agile software craftsmanship",
+                        "createdAt": "2024-01-15T10:00:00Z",
+                        "updatedAt": "2024-01-15T10:00:00Z"
+                    }
+                ],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 1,
+                    "totalPages": 1
+                }
+            }
+
+### Thêm sách mới [POST]
+
+Thêm một cuốn sách mới vào thư viện.
+
++ Request (application/json)
+
+    + Attributes
+        + title (string, required) - Tên sách
+        + author (string, required) - Tác giả
+        + isbn (string, required) - Mã ISBN 13 chữ số
+        + category (enum[string], required) - Danh mục
+            + Members
+                + `fiction`
+                + `non-fiction`
+                + `science`
+                + `history`
+                + `technology`
+        + totalCopies (number, required) - Tổng số bản
+        + publishedYear (number, optional) - Năm xuất bản
+        + description (string, optional) - Mô tả sách
+
+    + Body
+
+            {
+                "title": "The Pragmatic Programmer",
+                "author": "David Thomas, Andrew Hunt",
+                "isbn": "9780135957059",
+                "category": "technology",
+                "totalCopies": 5,
+                "publishedYear": 2019,
+                "description": "A guide to pragmatic programming"
+            }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "book-002",
+                    "title": "The Pragmatic Programmer",
+                    "author": "David Thomas, Andrew Hunt",
+                    "isbn": "9780135957059",
+                    "category": "technology",
+                    "totalCopies": 5,
+                    "availableCopies": 5,
+                    "publishedYear": 2019,
+                    "description": "A guide to pragmatic programming",
+                    "createdAt": "2024-03-20T08:00:00Z",
+                    "updatedAt": "2024-03-20T08:00:00Z"
+                }
+            }
+
++ Response 400 (application/json)
+
+    + Body
+
+            {
+                "error": "VALIDATION_ERROR",
+                "message": "Dữ liệu không hợp lệ",
+                "details": [
+                    {
+                        "field": "isbn",
+                        "message": "ISBN phải có đúng 13 chữ số"
+                    }
+                ]
+            }
+
++ Response 409 (application/json)
+
+    + Body
+
+            {
+                "error": "CONFLICT",
+                "message": "ISBN đã tồn tại trong hệ thống"
+            }
+
+## Sách theo ID [/books/{bookId}]
+
++ Parameters
+    + bookId (string, required) - ID của sách
+        + Example: `book-001`
+
+### Xem thông tin sách [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "book-001",
+                    "title": "Clean Code",
+                    "author": "Robert C. Martin",
+                    "isbn": "9780132350884",
+                    "category": "technology",
+                    "totalCopies": 3,
+                    "availableCopies": 1,
+                    "publishedYear": 2008,
+                    "description": "A handbook of agile software craftsmanship",
+                    "createdAt": "2024-01-15T10:00:00Z",
+                    "updatedAt": "2024-01-15T10:00:00Z"
+                }
+            }
+
++ Response 404 (application/json)
+
+    + Body
+
+            {
+                "error": "NOT_FOUND",
+                "message": "Không tìm thấy sách với ID book-999"
+            }
+
+### Cập nhật thông tin sách [PUT]
+
++ Request (application/json)
+
+    + Attributes
+        + title (string, optional) - Tên sách
+        + author (string, optional) - Tác giả
+        + category (enum[string], optional) - Danh mục
+        + totalCopies (number, optional) - Tổng số bản
+        + publishedYear (number, optional) - Năm xuất bản
+        + description (string, optional) - Mô tả
+
+    + Body
+
+            {
+                "totalCopies": 5,
+                "description": "Updated description for Clean Code"
+            }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "book-001",
+                    "title": "Clean Code",
+                    "author": "Robert C. Martin",
+                    "isbn": "9780132350884",
+                    "category": "technology",
+                    "totalCopies": 5,
+                    "availableCopies": 3,
+                    "publishedYear": 2008,
+                    "description": "Updated description for Clean Code",
+                    "createdAt": "2024-01-15T10:00:00Z",
+                    "updatedAt": "2024-03-20T09:00:00Z"
+                }
+            }
+
++ Response 404 (application/json)
+
+    + Body
+
+            {
+                "error": "NOT_FOUND",
+                "message": "Không tìm thấy sách"
+            }
+
+### Xóa sách [DELETE]
+
++ Response 204
+
++ Response 404 (application/json)
+
+    + Body
+
+            {
+                "error": "NOT_FOUND",
+                "message": "Không tìm thấy sách"
+            }
+
++ Response 409 (application/json)
+
+    + Body
+
+            {
+                "error": "CONFLICT",
+                "message": "Không thể xóa sách đang được mượn"
+            }
+
+# Group Thành viên (Members)
+
+## Danh sách thành viên [/members{?page,limit,search}]
+
+### Lấy danh sách thành viên [GET]
+
++ Parameters
+    + page (number, optional) - Trang hiện tại - Default: `1`
+    + limit (number, optional) - Số bản ghi mỗi trang - Default: `20`
+    + search (string, optional) - Tìm theo tên hoặc email
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": [
+                    {
+                        "id": "member-001",
+                        "name": "Nguyễn Văn An",
+                        "email": "nguyenvanan@example.com",
+                        "phone": "0901234567",
+                        "membershipType": "premium",
+                        "membershipExpiry": "2025-12-31",
+                        "activeLoansCount": 2,
+                        "createdAt": "2024-01-01T00:00:00Z"
+                    }
+                ],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 1,
+                    "totalPages": 1
+                }
+            }
+
+### Đăng ký thành viên mới [POST]
+
++ Request (application/json)
+
+    + Attributes
+        + name (string, required) - Họ tên (2-100 ký tự)
+        + email (string, required) - Email (phải duy nhất)
+        + phone (string, optional) - Số điện thoại
+        + membershipType (enum[string], required) - Loại thành viên
+            + Members
+                + `basic`
+                + `premium`
+                + `student`
+
+    + Body
+
+            {
+                "name": "Trần Thị Bình",
+                "email": "tranthibinh@example.com",
+                "phone": "0987654321",
+                "membershipType": "student"
+            }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "member-002",
+                    "name": "Trần Thị Bình",
+                    "email": "tranthibinh@example.com",
+                    "phone": "0987654321",
+                    "membershipType": "student",
+                    "membershipExpiry": "2025-03-20",
+                    "activeLoansCount": 0,
+                    "createdAt": "2024-03-20T10:00:00Z"
+                }
+            }
+
++ Response 409 (application/json)
+
+    + Body
+
+            {
+                "error": "CONFLICT",
+                "message": "Email đã được đăng ký"
+            }
+
+## Thành viên theo ID [/members/{memberId}]
+
++ Parameters
+    + memberId (string, required) - ID thành viên
+
+### Xem thông tin thành viên [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "member-001",
+                    "name": "Nguyễn Văn An",
+                    "email": "nguyenvanan@example.com",
+                    "phone": "0901234567",
+                    "membershipType": "premium",
+                    "membershipExpiry": "2025-12-31",
+                    "activeLoansCount": 2,
+                    "createdAt": "2024-01-01T00:00:00Z"
+                }
+            }
+
++ Response 404 (application/json)
+
+    + Body
+
+            {
+                "error": "NOT_FOUND",
+                "message": "Không tìm thấy thành viên"
+            }
+
+## Lịch sử mượn sách [/members/{memberId}/loans{?status}]
+
++ Parameters
+    + memberId (string, required) - ID thành viên
+    + status (enum[string], optional) - Lọc theo trạng thái
+        + Members
+            + `active`
+            + `returned`
+            + `overdue`
+
+### Xem lịch sử mượn [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": [
+                    {
+                        "id": "loan-001",
+                        "bookId": "book-001",
+                        "book": {
+                            "id": "book-001",
+                            "title": "Clean Code",
+                            "author": "Robert C. Martin"
+                        },
+                        "memberId": "member-001",
+                        "borrowedAt": "2024-03-01",
+                        "dueDate": "2024-03-15",
+                        "returnedAt": null,
+                        "status": "overdue"
+                    }
+                ],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 1,
+                    "totalPages": 1
+                }
+            }
+
+# Group Mượn/Trả sách (Loans)
+
+## Danh sách phiếu mượn [/loans{?status,page,limit}]
+
+### Lấy tất cả phiếu mượn [GET]
+
++ Parameters
+    + status (enum[string], optional) - Lọc theo trạng thái
+        + Members
+            + `active`
+            + `returned`
+            + `overdue`
+    + page (number, optional) - Default: `1`
+    + limit (number, optional) - Default: `20`
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": [
+                    {
+                        "id": "loan-001",
+                        "bookId": "book-001",
+                        "memberId": "member-001",
+                        "borrowedAt": "2024-03-01",
+                        "dueDate": "2024-03-15",
+                        "returnedAt": null,
+                        "status": "overdue",
+                        "condition": null
+                    }
+                ],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 1,
+                    "totalPages": 1
+                }
+            }
+
+### Tạo phiếu mượn [POST]
+
++ Request (application/json)
+
+    + Attributes
+        + bookId (string, required) - ID sách cần mượn
+        + memberId (string, required) - ID thành viên mượn
+        + dueDate (string, optional) - Ngày hạn trả (ISO 8601 date). Mặc định: 14 ngày từ hôm nay
+
+    + Body
+
+            {
+                "bookId": "book-001",
+                "memberId": "member-001",
+                "dueDate": "2024-04-03"
+            }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "loan-002",
+                    "bookId": "book-001",
+                    "book": {
+                        "id": "book-001",
+                        "title": "Clean Code",
+                        "author": "Robert C. Martin"
+                    },
+                    "memberId": "member-001",
+                    "member": {
+                        "id": "member-001",
+                        "name": "Nguyễn Văn An"
+                    },
+                    "borrowedAt": "2024-03-20",
+                    "dueDate": "2024-04-03",
+                    "returnedAt": null,
+                    "status": "active",
+                    "condition": null
+                }
+            }
+
++ Response 422 (application/json)
+
+    + Body
+
+            {
+                "error": "UNPROCESSABLE",
+                "message": "Sách không còn bản nào để mượn"
+            }
+
+## Phiếu mượn theo ID [/loans/{loanId}]
+
++ Parameters
+    + loanId (string, required) - ID phiếu mượn
+
+### Xem thông tin phiếu mượn [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "loan-001",
+                    "bookId": "book-001",
+                    "memberId": "member-001",
+                    "borrowedAt": "2024-03-01",
+                    "dueDate": "2024-03-15",
+                    "returnedAt": null,
+                    "status": "overdue",
+                    "condition": null
+                }
+            }
+
++ Response 404 (application/json)
+
+    + Body
+
+            {
+                "error": "NOT_FOUND",
+                "message": "Không tìm thấy phiếu mượn"
+            }
+
+## Trả sách [/loans/{loanId}/return]
+
++ Parameters
+    + loanId (string, required) - ID phiếu mượn cần trả
+
+### Xác nhận trả sách [POST]
+
++ Request (application/json)
+
+    + Attributes
+        + returnedAt (string, optional) - Ngày trả thực tế. Mặc định: hôm nay
+        + condition (enum[string], optional) - Tình trạng sách khi trả
+            + Members
+                + `good`
+                + `damaged`
+                + `lost`
+            + Default: `good`
+
+    + Body
+
+            {
+                "returnedAt": "2024-03-20",
+                "condition": "good"
+            }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": {
+                    "id": "loan-001",
+                    "bookId": "book-001",
+                    "memberId": "member-001",
+                    "borrowedAt": "2024-03-01",
+                    "dueDate": "2024-03-15",
+                    "returnedAt": "2024-03-20",
+                    "status": "returned",
+                    "condition": "good"
+                }
+            }
+
++ Response 409 (application/json)
+
+    + Body
+
+            {
+                "error": "CONFLICT",
+                "message": "Sách này đã được trả trước đó"
+            }
+
+# Data Structures
+
+## Book (object)
++ id (string, required) - ID duy nhất của sách
++ title (string, required) - Tên sách
++ author (string, required) - Tác giả
++ isbn (string, required) - Mã ISBN 13 chữ số
++ category (string, required) - Danh mục: fiction, non-fiction, science, history, technology
++ totalCopies (number, required) - Tổng số bản
++ availableCopies (number, required) - Số bản còn có thể mượn
++ publishedYear (number, optional) - Năm xuất bản
++ description (string, optional) - Mô tả sách
++ createdAt (string, required) - Ngày tạo (ISO 8601)
++ updatedAt (string, required) - Ngày cập nhật cuối (ISO 8601)
+
+## Member (object)
++ id (string, required) - ID duy nhất
++ name (string, required) - Họ tên
++ email (string, required) - Email
++ phone (string, optional) - Số điện thoại
++ membershipType (string, required) - Loại thành viên: basic, premium, student
++ membershipExpiry (string, required) - Ngày hết hạn thành viên
++ activeLoansCount (number, required) - Số phiếu mượn đang mở
++ createdAt (string, required) - Ngày tạo
+
+## Pagination (object)
++ page (number, required) - Trang hiện tại
++ limit (number, required) - Số bản ghi mỗi trang
++ total (number, required) - Tổng số bản ghi
++ totalPages (number, required) - Tổng số trang
