@@ -20,7 +20,7 @@ CORS(app)
 # Configurations
 PORT = 5000
 
-APIVERSION = 'v3'
+APIVERSION = 'v4'
 
 BOOKAPI_URL = f'/api/{APIVERSION}/books'
 
@@ -192,11 +192,39 @@ def get_books_with_cache():
     if id:
         books = [b for b in books if str(b['id']) == id]
     if title:
-        books = [b for b in books if b['title'] == title]
+        books = [b for b in books if b['title'].lower() == title.lower()]
     if author:
-        books = [b for b in books if b['author'] == author]
+        books = [b for b in books if b['author'].lower() == author.lower()]
 
-    response = make_response(jsonify(books))
+    try:
+        page = int(request.args.get('page', 1))
+        pageSize = int(request.args.get('pageSize', 10))
+        if page < 1 or pageSize < 1:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters."}), 400
+
+    sumRecords = len(books)
+    sumPages = (sumRecords + pageSize - 1) // pageSize
+
+    if page > sumPages and sumPages != 0:
+        return jsonify({"error": "Page number out of range."}), 400
+
+    start = (page - 1) * pageSize
+    end = start + pageSize
+
+    paginated_books = books[start:end]
+
+    pagination_info = {
+        "Total Records": sumRecords,
+        "Total Pages": sumPages,
+        "currentPage": page,    
+        "pageSize": pageSize,
+        "hasNextPage": page < sumPages,
+        "hasPreviousPage": page > 1
+    }
+
+    response = make_response(jsonify({"books": paginated_books, "pagination": pagination_info}))
 
     # Add Cache-Control header if caching is allowed
     if allowCache:

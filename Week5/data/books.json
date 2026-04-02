@@ -1,42 +1,32 @@
 [
-    {
-        "author": "Isaac Asimov",
-        "id": 1,
-        "title": "Foundation"
-    },
-    {
-        "author": "Andy Weir",
-        "id": 2,
-        "title": "Project Hail Mary"
-    },
-    {
-        "author": "Andy Weir",
-        "id": 3,
-        "title": "The Martian"
-    },
-    {
-        "author": "Frank Herbert",
-        "id": 4,
-        "title": "Dune"
-    },
-    {
-        "author": "J.R.R. Tolkien",
-        "id": 5,
-        "title": "The Lord of the Rings"
-    },
-    {
-        "author": "me",
-        "id": 6,
-        "title": "whatever the title of the book is"
-    },
-    {
-        "author": "me",
-        "id": 7,
-        "title": "whates"
-    },
-    {
-        "author": "me",
-        "id": 8,
-        "title": "whatesawdwadw"
-    }
+    { "id": 1, "title": "Foundation", "author": "Isaac Asimov" },
+    { "id": 2, "title": "Project Hail Mary", "author": "Andy Weir" },
+    { "id": 3, "title": "The Martian", "author": "Andy Weir" },
+    { "id": 4, "title": "Dune", "author": "Frank Herbert" },
+    { "id": 5, "title": "The Lord of the Rings", "author": "J.R.R. Tolkien" },
+    { "id": 6, "title": "The Hobbit", "author": "J.R.R. Tolkien" },
+    { "id": 7, "title": "1984", "author": "George Orwell" },
+    { "id": 8, "title": "Animal Farm", "author": "George Orwell" },
+    { "id": 9, "title": "Brave New World", "author": "Aldous Huxley" },
+    { "id": 10, "title": "Fahrenheit 451", "author": "Ray Bradbury" },
+    { "id": 11, "title": "The Great Gatsby", "author": "F. Scott Fitzgerald" },
+    { "id": 12, "title": "Moby Dick", "author": "Herman Melville" },
+    { "id": 13, "title": "War and Peace", "author": "Leo Tolstoy" },
+    { "id": 14, "title": "Crime and Punishment", "author": "Fyodor Dostoevsky" },
+    { "id": 15, "title": "The Catcher in the Rye", "author": "J.D. Salinger" },
+    { "id": 16, "title": "Pride and Prejudice", "author": "Jane Austen" },
+    { "id": 17, "title": "The Alchemist", "author": "Paulo Coelho" },
+    { "id": 18, "title": "To Kill a Mockingbird", "author": "Harper Lee" },
+    { "id": 19, "title": "The Book Thief", "author": "Markus Zusak" },
+    { "id": 20, "title": "Sapiens", "author": "Yuval Noah Harari" },
+    { "id": 21, "title": "Homo Deus", "author": "Yuval Noah Harari" },
+    { "id": 22, "title": "Atomic Habits", "author": "James Clear" },
+    { "id": 23, "title": "Deep Work", "author": "Cal Newport" },
+    { "id": 24, "title": "Clean Code", "author": "Robert C. Martin" },
+    { "id": 25, "title": "The Pragmatic Programmer", "author": "Andrew Hunt" },
+    { "id": 26, "title": "Harry Potter and the Sorcerer's Stone", "author": "J.K. Rowling" },
+    { "id": 27, "title": "The Shining", "author": "Stephen King" },
+    { "id": 28, "title": "Neuromancer", "author": "William Gibson" },
+    { "id": 29, "title": "Snow Crash", "author": "Neal Stephenson" },
+    { "id": 30, "title": "The Hitchhiker's Guide to the Galaxy", "author": "Douglas Adams" }
 ]
