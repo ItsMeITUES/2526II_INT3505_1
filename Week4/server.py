@@ -92,6 +92,8 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
+    print(SECRET_KEY)
+
     if not username:
         return jsonify({"error":"Username is required."}), 400
     if not password:
@@ -115,7 +117,7 @@ def login():
         
         payload = {
             'user_id': username,
-            'role': 'admin',
+            'role': 'user',
             'exp': now + timedelta(seconds=tokenExpirationTime),
             'iat': now
         }
@@ -171,6 +173,33 @@ def token_required(f):
             return jsonify({"error": "Token expired."}), 401
         except jwt.InvalidTokenError:
             return jsonify({"error": "Token invalid."}), 401
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            token = auth_header.split(" ")[1] if " " in auth_header else None
+
+        if not token:
+            return jsonify({"error":"No token received."}), 401
+
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms='HS256')
+            current_user = data['user_id']
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Token invalid."}), 401
+        
+        if data.get('role') != 'admin':
+            return jsonify({"error": "Admin access required."}), 403
         
         return f(current_user, *args, **kwargs)
     
@@ -258,7 +287,7 @@ def get_book(book_id):
 
 # Delete a book by ID
 @app.route(f'{BOOKAPI_URL}/<int:book_id>', methods=['DELETE'])
-@token_required
+@admin_required
 def delete_book(current_user, book_id):
 
     books = load_books()

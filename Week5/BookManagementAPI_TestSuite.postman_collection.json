@@ -1,0 +1,1281 @@
+{
+  "info": {
+    "name": "Book Management API – Test Suite",
+    "description": "Bộ test đầy đủ cho Book Management API (server.py) — bao gồm Auth, CRUD sách, phân trang, cache header, và các edge cases.\n\nCách dùng:\n1. Import file này vào Postman.\n2. Import file environment `BookManagementAPI.postman_environment.json`.\n3. Chạy folder theo thứ tự: Auth → Books → Protected → Edge Cases.\n4. Hoặc chạy toàn bộ bằng Newman:\n   newman run BookManagementAPI_TestSuite.postman_collection.json -e BookManagementAPI.postman_environment.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",  "value": "http://localhost:5000" },
+    { "key": "apiVer",   "value": "v4" },
+    { "key": "token",    "value": "" },
+    { "key": "newBookId","value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Auth",
+      "description": "Kiểm thử các endpoint đăng ký và đăng nhập",
+      "item": [
+
+        {
+          "name": "[POST] Register – Success (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "",
+                  "pm.test('Response has success message', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('message');",
+                  "    pm.expect(body.message).to.include('successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testUser}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "register"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Register – Duplicate Username (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for duplicate username', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error message mentions username taken', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body.error.toLowerCase()).to.include('taken');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testUser}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "register"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Register – Missing Fields (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 when fields missing', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Returns error object', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "register"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Login – Success → save token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Response contains accessToken', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('accessToken');",
+                  "    pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+                  "    // Save token to collection variable for subsequent requests",
+                  "    pm.collectionVariables.set('token', body.accessToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testUser}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "login"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Login – Wrong Password (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 for wrong password', () => pm.response.to.have.status(401));",
+                  "",
+                  "pm.test('Error message mentions password', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body.error.toLowerCase()).to.include('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{testUser}}\",\n  \"password\": \"WRONG_PASSWORD_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "login"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Login – Unregistered User (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 for unknown user', () => pm.response.to.have.status(401));",
+                  "",
+                  "pm.test('Error mentions unregistered', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('unregistered');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ghost_user_that_does_not_exist\",\n  \"password\": \"somepassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "login"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Login – Missing Username (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 when username missing', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error mentions username required', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('username');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"somepassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "auth", "login"]
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "📚 Books – Read (Public)",
+      "description": "GET endpoints — không cần token",
+      "item": [
+
+        {
+          "name": "[GET] Get All Books – Default Pagination (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Response has books array and pagination', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('books');",
+                  "    pm.expect(body.books).to.be.an('array');",
+                  "    pm.expect(body).to.have.property('pagination');",
+                  "});",
+                  "",
+                  "pm.test('Pagination object has correct keys', () => {",
+                  "    const p = pm.response.json().pagination;",
+                  "    pm.expect(p).to.have.all.keys(",
+                  "        'Total Records', 'Total Pages', 'currentPage',",
+                  "        'pageSize', 'hasNextPage', 'hasPreviousPage'",
+                  "    );",
+                  "});",
+                  "",
+                  "pm.test('Default pageSize is 10', () => {",
+                  "    pm.expect(pm.response.json().pagination.pageSize).to.equal(10);",
+                  "});",
+                  "",
+                  "pm.test('Cache-Control header present', () => {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.exist;",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('max-age');",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get All Books – Custom Pagination (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Correct page and pageSize returned', () => {",
+                  "    const p = pm.response.json().pagination;",
+                  "    pm.expect(p.currentPage).to.equal(1);",
+                  "    pm.expect(p.pageSize).to.equal(3);",
+                  "});",
+                  "",
+                  "pm.test('Books array length <= pageSize', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.books.length).to.be.at.most(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?page=1&pageSize=3",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "3" }
+              ]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get All Books – Filter by Author (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('All returned books match the author (case-insensitive)', () => {",
+                  "    const books = pm.response.json().books;",
+                  "    books.forEach(b => {",
+                  "        pm.expect(b.author.toLowerCase()).to.equal('george orwell');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?author=George Orwell",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [{ "key": "author", "value": "George Orwell" }]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get All Books – Filter by Title (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('All returned books match the title (case-insensitive)', () => {",
+                  "    const books = pm.response.json().books;",
+                  "    books.forEach(b => {",
+                  "        pm.expect(b.title.toLowerCase()).to.equal('1984');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?title=1984",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [{ "key": "title", "value": "1984" }]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get All Books – Invalid Pagination (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for invalid page param', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Returns error object', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body.error.toLowerCase()).to.include('pagination');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?page=-1&pageSize=abc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [
+                { "key": "page", "value": "-1" },
+                { "key": "pageSize", "value": "abc" }
+              ]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get Book by ID – Found (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Book has required fields', () => {",
+                  "    const book = pm.response.json();",
+                  "    pm.expect(book).to.have.property('id');",
+                  "    pm.expect(book).to.have.property('title');",
+                  "    pm.expect(book).to.have.property('author');",
+                  "});",
+                  "",
+                  "pm.test('Book ID matches requested ID', () => {",
+                  "    pm.expect(pm.response.json().id).to.equal(1);",
+                  "});",
+                  "",
+                  "pm.test('Cache-Control header present', () => {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "1"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Get Book by ID – Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "",
+                  "pm.test('Error message mentions book not found', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body.error.toLowerCase()).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "999999"]
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "✏️ Books – Write (Auth Required)",
+      "description": "POST / PUT / PATCH / DELETE — yêu cầu Bearer token",
+      "item": [
+
+        {
+          "name": "[POST] Add Book – Success → save newBookId (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "",
+                  "pm.test('Response contains the created book with an ID', () => {",
+                  "    const book = pm.response.json();",
+                  "    pm.expect(book).to.have.property('id');",
+                  "    pm.expect(book.id).to.be.a('number');",
+                  "    pm.expect(book).to.have.property('title', 'Test Book Alpha');",
+                  "    pm.expect(book).to.have.property('author', 'Test Author');",
+                  "    // Save for later tests",
+                  "    pm.collectionVariables.set('newBookId', book.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Book Alpha\",\n  \"author\": \"Test Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Add Book – Duplicate (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for duplicate book', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error message mentions already exists', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('already exists');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Book Alpha\",\n  \"author\": \"Test Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Add Book – Missing Title (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for missing title', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error mentions title field', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('title');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"author\": \"Someone\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Add Book – Missing Author (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for missing author', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error mentions author field', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('author');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"A Book Without Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Add Book – No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 when no token', () => pm.response.to.have.status(401));",
+                  "",
+                  "pm.test('Error mentions token', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('token');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorized Book\",\n  \"author\": \"Nobody\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[PUT] Update Book – Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Updated book reflects new values', () => {",
+                  "    const book = pm.response.json();",
+                  "    pm.expect(book.title).to.equal('Test Book Alpha – Updated');",
+                  "    pm.expect(book.author).to.equal('Updated Author');",
+                  "    pm.expect(book.id).to.equal(pm.collectionVariables.get('newBookId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{newBookId}},\n  \"title\": \"Test Book Alpha – Updated\",\n  \"author\": \"Updated Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[PUT] Update Book – ID Mismatch (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 when URL id ≠ body id', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error mentions ID mismatch', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 99999,\n  \"title\": \"Mismatch Test\",\n  \"author\": \"Mismatch Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[PUT] Update Book – Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 for non-existing book', () => pm.response.to.have.status(404));",
+                  "",
+                  "pm.test('Error message is book not found', () => {",
+                  "    pm.expect(pm.response.json().error.toLowerCase()).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 999999,\n  \"title\": \"Ghost Book\",\n  \"author\": \"Ghost Author\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "999999"]
+            }
+          }
+        },
+
+        {
+          "name": "[PATCH] Partially Update Book – Title Only (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Title was updated', () => {",
+                  "    pm.expect(pm.response.json().title).to.equal('Patched Title');",
+                  "});",
+                  "",
+                  "pm.test('Author was NOT changed', () => {",
+                  "    pm.expect(pm.response.json().author).to.equal('Updated Author');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Patched Title\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[PATCH] Partially Update Book – ID Mismatch (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for body/url ID mismatch', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"title\": \"Mismatched Patch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[PATCH] Partially Update Book – Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Nobody\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "999999"]
+            }
+          }
+        },
+
+        {
+          "name": "[DELETE] Delete Book – Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Response message confirms deletion', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('message');",
+                  "    pm.expect(body.message.toLowerCase()).to.include('deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[DELETE] Delete Book – Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 when book already deleted', () => pm.response.to.have.status(404));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/{{newBookId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "{{newBookId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "[DELETE] Delete Book – No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 when no token provided', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "1"]
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "🔒 Protected Endpoint",
+      "description": "Kiểm thử endpoint /api/protected-data",
+      "item": [
+
+        {
+          "name": "[GET] Protected Data – Valid Token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Returns data property', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('data');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/protected-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "protected-data"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Protected Data – No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 without token', () => pm.response.to.have.status(401));",
+                  "",
+                  "pm.test('Error mentions no token', () => {",
+                  "    pm.expect(pm.response.json().error.toLowerCase()).to.include('token');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/protected-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "protected-data"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Protected Data – Invalid Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 for invalid token', () => pm.response.to.have.status(401));",
+                  "",
+                  "pm.test('Error mentions invalid token', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.satisfy(msg =>",
+                  "        msg.includes('invalid') || msg.includes('expired')",
+                  "    );",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer this.is.not.a.valid.jwt.token" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/protected-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "protected-data"]
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "⚠️ Edge Cases & Security",
+      "description": "Các trường hợp biên và kiểm tra bảo mật cơ bản",
+      "item": [
+
+        {
+          "name": "[GET] SQL Injection attempt in query param",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server does not crash on injection input (200 or 400)', () => {",
+                  "    pm.expect([200, 400]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', () => {",
+                  "    pm.response.json(); // throws if not JSON",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?title=' OR '1'='1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [{ "key": "title", "value": "' OR '1'='1" }]
+            }
+          }
+        },
+
+        {
+          "name": "[POST] Add Book – Empty Body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 for empty body', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Page Out of Range (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 when page exceeds total pages', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Error message mentions page', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.toLowerCase()).to.include('page');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books?page=99999&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"],
+              "query": [
+                { "key": "page", "value": "99999" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+
+        {
+          "name": "[PUT] Update – Missing Required Fields (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 when body is missing required fields', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "1"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Content-Type is application/json",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Content-Type is application/json', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books", "1"]
+            }
+          }
+        },
+
+        {
+          "name": "[GET] Response Time Under 1000ms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response time is acceptable (< 1000ms)', () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVer}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVer}}", "books"]
+            }
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

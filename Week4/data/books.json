@@ -38,5 +38,15 @@
         "author": "me",
         "id": 8,
         "title": "whatesawdwadw"
+    },
+    {
+        "author": "whatever the author of the book is",
+        "id": 9,
+        "title": "whatever the title of the book is"
+    },
+    {
+        "author": "Gemini",
+        "id": 10,
+        "title": "L\u1eadp tr\u00ecnh Python"
     }
 ]
