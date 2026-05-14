@@ -1,0 +1,16 @@
+# Core
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Limiter==3.8.0
+
+# Metrics
+prometheus-client==0.20.0
+
+# Production server
+gunicorn==22.0.0
+
+# Optional: Redis for distributed rate limiting (swap memory:// → redis://)
+# redis==5.0.4
+
+# Optional: PostgreSQL (swap sqlite:/// → postgresql://)
+# psycopg2-binary==2.9.9
