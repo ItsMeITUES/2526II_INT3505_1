@@ -1,0 +1,20 @@
+2026-05-15 03:36:30,169 [INFO] werkzeug: WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.2.106:5000
+2026-05-15 03:36:30,169 [INFO] werkzeug: Press CTRL+C to quit
+2026-05-15 03:36:37,638 [INFO] __main__: API data được gọi
+2026-05-15 03:36:37,638 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:37] "GET /api/data HTTP/1.1" 200 -
+2026-05-15 03:36:38,145 [INFO] __main__: API data được gọi
+2026-05-15 03:36:38,146 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:38] "GET /api/data HTTP/1.1" 200 -
+2026-05-15 03:36:38,654 [INFO] __main__: API data được gọi
+2026-05-15 03:36:38,657 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:38] "GET /api/data HTTP/1.1" 200 -
+2026-05-15 03:36:39,164 [INFO] __main__: API data được gọi
+2026-05-15 03:36:39,164 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:39] "GET /api/data HTTP/1.1" 200 -
+2026-05-15 03:36:39,671 [INFO] __main__: API data được gọi
+2026-05-15 03:36:39,672 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:39] "GET /api/data HTTP/1.1" 200 -
+2026-05-15 03:36:40,178 [INFO] flask-limiter: ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: get_data
+2026-05-15 03:36:40,180 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:40] "GET /api/data HTTP/1.1" 429 -
+2026-05-15 03:36:40,686 [INFO] flask-limiter: ratelimit 5 per 1 minute (127.0.0.1) exceeded at endpoint: get_data
+2026-05-15 03:36:40,687 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:36:40] "GET /api/data HTTP/1.1" 429 -
+2026-05-15 03:38:28,840 [INFO] werkzeug: 127.0.0.1 - - [15/May/2026 03:38:28] "GET /metrics HTTP/1.1" 200 -
